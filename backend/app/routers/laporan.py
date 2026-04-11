@@ -1,72 +1,70 @@
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
-from sqlalchemy.orm import Session                                                                                                                                                                                                                                                                                                                              
-from fastapi import APIRouter, Depends                                                                                                                                                                                                                                                                                                                          
-from ..deps import get_db                                                                                                                                                                                                                                                                                                                                       
+from sqlalchemy.orm import Session
+from ..deps import get_db
 from .. import models
-from fpdf import FPDF                                                                                                                                                                                                                                                                                                                                           
+from fpdf import FPDF
 from datetime import datetime, timezone
-                                                                                                                                                                                                                                                                                                                                                                
+
 router = APIRouter()
-                                                                                                                                                                                                                                                                                                                                                                
-class LaporanPDF(FPDF):                                                                                                                                                                                                                                                                                                                                         
-    def header(self):                            
-        self.set_font("Helvetica", "B", 14)                                                                                                                                                                                                                                                                                                                     
-        self.cell(0, 10, "Laporan Kelayakan Tenant", align="C", new_x="LMARGIN", new_y="NEXT")                                                                                                                                                                                                                                                              
-        self.set_font("Helvetica", "", 10)                                                                                                                                                                                                                                                                                                                      
-        self.cell(0, 6, "Metode TOPSIS", align="C", new_x="LMARGIN", new_y="NEXT")                                                                                                                                                                                                                                                                              
-        self.ln(4)                                                                                                                                                                                                                                                                                                                                              
-                                                                                                                                                                                                                                                                                                                                                                
-    def footer(self):                                                                                                                                                                                                                                                                                                                                           
-        self.set_y(-15)                                                                                                                                                                                                                                                                                                                                         
-        self.set_font("Helvetica", "I", 8)                                                                                                                                                                                                                                                                                                                      
-        tanggal = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")                                                                                                                                                                                                                                                                                     
-        self.cell(0, 10, f"Dicetak: {tanggal}  |  Hal {self.page_no()}", align="C")                                                                                                                                                                                                                                                                             
-                                                                                                                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                                                                                              
-@router.get("/pdf")                                                                                                                                                                                                                                                                                                                                             
+
+class LaporanPDF(FPDF):
+    def header(self):
+        self.set_font("Helvetica", "B", 14)
+        self.cell(0, 10, "Laporan Kelayakan Tenant", align="C", new_x="LMARGIN", new_y="NEXT")
+        self.set_font("Helvetica", "", 10)
+        self.cell(0, 6, "Metode TOPSIS", align="C", new_x="LMARGIN", new_y="NEXT")
+        self.ln(4)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Helvetica", "I", 8)
+        tanggal = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+        self.cell(0, 10, f"Dicetak: {tanggal}  |  Hal {self.page_no()}", align="C")
+
+
+@router.get("/pdf")
 def download_pdf(db: Session = Depends(get_db)):
-    hasil = (                                                                                                                                                                                                                                                                                                                                                   
+    hasil = (
         db.query(models.HasilTopsis)
-          .order_by(models.HasilTopsis.ranking)                                                                                                                                                                                                                                                                                                               
-          .all()                                                                                                                                                                                                                                                                                                                                                
-    )                                                                                                                                                                                                                                                                                                                                                         
-                                                                                                                                                                                                                                                                                                                                                                
-    pdf = LaporanPDF()          
-    pdf.add_page()                                                                                                                                                                                                                                                                                                                                              
+          .order_by(models.HasilTopsis.ranking)
+          .all()
+    )
+    if not hasil:
+        raise HTTPException(404, "Belum ada hasil kalkulasi TOPSIS")
+
+    pdf = LaporanPDF()
+    pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # ── Header tabel ──────────────────────────────                                                                                                                                                                                                                                                                                                          
-    pdf.set_font("Helvetica", "B", 10)                                                                                                                                                                                                                                                                                                                          
-    pdf.set_fill_color(44, 62, 80)                                                                                                                                                                                                                                                                                                                              
-    pdf.set_text_color(255, 255, 255)                                                                                                                                                                                                                                                                                                                           
-    col_w = [15, 60, 45, 40, 30]                                                                                                                                                                                                                                                                                                                                
-    headers = ["No", "Nama Tenant", "NIK", "Nilai Preferensi", "Status"]                                                                                                                                                                                                                                                                                        
-    for i, h in enumerate(headers):                                                                                                                                                                                                                                                                                                                           
-        pdf.cell(col_w[i], 9, h, border=1, fill=True, align="C")                                                                                                                                                                                                                                                                                                
-    pdf.ln()                                                                                                                                                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                                                                                                                                                
-    # ── Isi tabel ─────────────────────────────────                                                                                                                                                                                                                                                                                                            
-    pdf.set_font("Helvetica", "", 9)                                                                                                                                                                                                                                                                                                                          
-    pdf.set_text_color(0, 0, 0)                                                                                                                                                                                                                                                                                                                                 
-    for h in hasil:             
-        fill = h.ranking % 2 == 0                                                                                                                                                                                                                                                                                                                               
-        pdf.set_fill_color(242, 242, 242)                                                                                                                                                                                                                                                                                                                     
-        pdf.cell(col_w[0], 8, str(h.ranking),                       border=1, fill=fill, align="C")                                                                                                                                                                                                                                                             
-        pdf.cell(col_w[1], 8, h.tenant.nama,                        border=1, fill=fill)                                                                                                                                                                                                                                                                      
-        pdf.cell(col_w[2], 8, h.tenant.nik,                         border=1, fill=fill, align="C")                                                                                                                                                                                                                                                             
-        pdf.cell(col_w[3], 8, f"{h.nilai_preferensi:.4f}",          border=1, fill=fill, align="C")                                                                                                                                                                                                                                                             
-                                                                                                                                                                                                                                                                                                                                                                
-        if h.status == "LAYAK":                                                                                                                                                                                                                                                                                                                                 
-            pdf.set_text_color(0, 128, 0)                                                                                                                                                                                                                                                                                                                       
-        else:                                                                                                                                                                                                                                                                                                                                                   
-            pdf.set_text_color(200, 0, 0)                                                                                                                                                                                                                                                                                                                       
-        pdf.cell(col_w[4], 8, h.status, border=1, fill=fill, align="C")                                                                                                                                                                                                                                                                                         
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_fill_color(44, 62, 80)
+    pdf.set_text_color(255, 255, 255)
+    col_w = [15, 60, 45, 40, 30]
+    headers = ["No", "Nama Tenant", "NIK", "Nilai Preferensi", "Status"]
+    for i, h in enumerate(headers):
+        pdf.cell(col_w[i], 9, h, border=1, fill=True, align="C")
+    pdf.ln()
+
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(0, 0, 0)
+    for h in hasil:
+        fill = h.ranking % 2 == 0
+        pdf.set_fill_color(242, 242, 242)
+        pdf.cell(col_w[0], 8, str(h.ranking),              border=1, fill=fill, align="C")
+        pdf.cell(col_w[1], 8, h.tenant.nama,               border=1, fill=fill)
+        pdf.cell(col_w[2], 8, h.tenant.nik,                border=1, fill=fill, align="C")
+        pdf.cell(col_w[3], 8, f"{h.nilai_preferensi:.4f}", border=1, fill=fill, align="C")
+        if h.status == "LAYAK":
+            pdf.set_text_color(0, 128, 0)
+        else:
+            pdf.set_text_color(200, 0, 0)
+        pdf.cell(col_w[4], 8, h.status, border=1, fill=fill, align="C")
         pdf.set_text_color(0, 0, 0)
-        pdf.ln()                                                                                                                                                                                                                                                                                                                                              
-                                                                                                                                                                                                                                                                                                                                                                
-    pdf_bytes = pdf.output()                                                                                                                                                                                                                                                                                                                                    
-    return Response(                                                                                                                                                                                                                                                                                                                                            
-        content    = bytes(pdf_bytes),                                                                                                                                                                                                                                                                                                                          
+        pdf.ln()
+
+    return Response(
+        content    = bytes(pdf.output()),
         media_type = "application/pdf",
         headers    = {"Content-Disposition": "attachment; filename=laporan_topsis.pdf"}
-    )                                                                                                                                                                                                                                                                                                                                                         
+    )

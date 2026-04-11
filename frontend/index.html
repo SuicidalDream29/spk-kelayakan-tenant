@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — SPK Kelayakan Tenant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-title">SPK Kelayakan Tenant</div>
+    <div class="brand-sub">Metode TOPSIS</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Menu</div>
+    <a href="/" class="nav-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+    <a href="/kriteria.html" class="nav-item"><i class="bi bi-sliders"></i> Kriteria</a>
+    <a href="/tenants.html" class="nav-item"><i class="bi bi-people"></i> Tenant</a>
+    <a href="/topsis.html" class="nav-item"><i class="bi bi-bar-chart-steps"></i> TOPSIS & Ranking</a>
+  </nav>
+  <div class="sidebar-footer">v1.0.0 &mdash; SPK System</div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <span class="topbar-title">Dashboard</span>
+    <div class="topbar-actions">
+      <a href="/topsis.html" class="btn btn-primary btn-sm"><i class="bi bi-calculator"></i> Hitung TOPSIS</a>
+    </div>
+  </header>
+  <div class="content">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon indigo"><i class="bi bi-sliders"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Total Kriteria</div>
+          <div class="stat-value" id="totalKriteria"><span class="spinner"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue" style="background:#eff6ff;color:#3b82f6"><i class="bi bi-people"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Total Tenant</div>
+          <div class="stat-value" id="totalTenant"><span class="spinner"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="bi bi-patch-check"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tenant Layak</div>
+          <div class="stat-value" id="totalLayak"><span class="spinner"></span></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red"><i class="bi bi-x-octagon"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tidak Layak</div>
+          <div class="stat-value" id="totalTidak"><span class="spinner"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title"><i class="bi bi-trophy" style="color:#f59e0b"></i> &nbsp;Ranking Terakhir</span>
+        <a href="/topsis.html" class="btn btn-ghost btn-sm">Lihat Semua <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Nama Tenant</th><th>NIK</th><th>Nilai Preferensi</th><th>Status</th></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/utils.js"></script>
+<script>
+async function loadDashboard() {
+  try {
+    const [kriteria, tenants] = await Promise.all([api.get("/kriteria/"), api.get("/tenants/")]);
+    document.getElementById("totalKriteria").textContent = kriteria.length;
+    document.getElementById("totalTenant").textContent   = tenants.length;
+  } catch(e) {
+    document.getElementById("totalKriteria").textContent = "-";
+    document.getElementById("totalTenant").textContent   = "-";
+  }
+
+  try {
+    const hasil = await api.get("/topsis/hasil");
+    const layak = hasil.filter(h => h.status === "LAYAK").length;
+    document.getElementById("totalLayak").textContent = layak;
+    document.getElementById("totalTidak").textContent = hasil.length - layak;
+
+    const rankClass = r => r === 1 ? "rank-1" : r === 2 ? "rank-2" : r === 3 ? "rank-3" : "rank-n";
+    document.getElementById("tbody").innerHTML = hasil.slice(0, 5).map(h => `
+      <tr>
+        <td><span class="rank-badge ${rankClass(h.ranking)}">${h.ranking}</span></td>
+        <td><strong>${h.tenant.nama}</strong></td>
+        <td style="color:#64748b">${h.tenant.nik}</td>
+        <td><strong>${h.nilai_preferensi.toFixed(4)}</strong></td>
+        <td><span class="badge ${h.status === 'LAYAK' ? 'badge-green' : 'badge-red'}">${h.status}</span></td>
+      </tr>`).join("");
+  } catch(_) {
+    document.getElementById("totalLayak").textContent = "-";
+    document.getElementById("totalTidak").textContent = "-";
+    document.getElementById("tbody").innerHTML = `
+      <tr><td colspan="5">
+        <div class="empty-state">
+          <i class="bi bi-bar-chart"></i>
+          <p>Belum ada kalkulasi TOPSIS. <a href="/topsis.html">Hitung sekarang</a></p>
+        </div>
+      </td></tr>`;
+  }
+}
+loadDashboard();
+</script>
+</body>
+</html>

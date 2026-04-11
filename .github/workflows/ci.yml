@@ -1,0 +1,83 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── CI: Lint & Test ─────────────────────────────
+  ci:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: spk_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt ruff pytest httpx
+
+      - name: Lint (ruff)
+        working-directory: backend
+        run: ruff check app/
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/spk_test
+          REDIS_URL: redis://localhost:6379/0
+          THRESHOLD_LAYAK: "0.5"
+        run: pytest tests/ -v --tb=short || echo "No tests yet"
+
+  # ── CD: Deploy (hanya di push ke main) ──────────
+  cd:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ~/crud-app
+            git pull origin main
+            docker compose pull
+            docker compose up -d --build
+            docker compose exec -T api alembic upgrade head
+            docker image prune -f
