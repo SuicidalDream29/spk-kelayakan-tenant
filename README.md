@@ -1,37 +1,37 @@
 # SPK Kelayakan Tenant
 
-Sistem Pendukung Keputusan (DSS) untuk menentukan kelayakan calon tenant menggunakan metode **TOPSIS** (Technique for Order of Preference by Similarity to Ideal Solution).
+A Decision Support System (DSS) for determining tenant rental eligibility using the **TOPSIS** method (Technique for Order of Preference by Similarity to Ideal Solution).
 
 ---
 
-## Daftar Isi
+## Table of Contents
 
-- [Fitur](#fitur)
+- [Features](#features)
 - [Tech Stack](#tech-stack)
-- [Arsitektur Sistem](#arsitektur-sistem)
-- [Algoritma TOPSIS](#algoritma-topsis)
-- [Cara Menjalankan](#cara-menjalankan)
-- [Cara Penggunaan](#cara-penggunaan)
+- [System Architecture](#system-architecture)
+- [TOPSIS Algorithm](#topsis-algorithm)
+- [Getting Started](#getting-started)
+- [How to Use](#how-to-use)
 - [API Reference](#api-reference)
 - [CI/CD](#cicd)
 - [Environment Variables](#environment-variables)
-- [Struktur Project](#struktur-project)
+- [Project Structure](#project-structure)
 
 ---
 
-## Fitur
+## Features
 
-- **Master Kriteria** — CRUD kriteria penilaian (benefit/cost) beserta bobot
-- **Data Tenant** — CRUD data tenant + input nilai per kriteria
-- **Kalkulasi TOPSIS** — Proses perangkingan otomatis via background worker
-- **Laporan PDF** — Generate & download laporan hasil perangkingan
-- **Dashboard** — Ringkasan statistik dan ranking terakhir
+- **Criteria Management** — CRUD evaluation criteria (benefit/cost) with weights
+- **Tenant Data** — CRUD tenant records + input values per criteria
+- **TOPSIS Calculation** — Automatic ranking via background worker queue
+- **PDF Report** — Generate and download ranking result report
+- **Dashboard** — Summary statistics and latest ranking overview
 
 ---
 
 ## Tech Stack
 
-| Layer | Teknologi |
+| Layer | Technology |
 |---|---|
 | Backend API | FastAPI (Python 3.12) |
 | Database | PostgreSQL 16 |
@@ -44,7 +44,7 @@ Sistem Pendukung Keputusan (DSS) untuk menentukan kelayakan calon tenant menggun
 
 ---
 
-## Arsitektur Sistem
+## System Architecture
 
 ```
 Client (Browser)
@@ -66,15 +66,15 @@ Client (Browser)
 
 ---
 
-## Algoritma TOPSIS
+## TOPSIS Algorithm
 
-TOPSIS adalah metode pengambilan keputusan multi-kriteria yang menentukan alternatif terbaik berdasarkan kedekatan dengan solusi ideal positif dan jauhan dari solusi ideal negatif.
+TOPSIS is a multi-criteria decision-making method that determines the best alternative based on its proximity to the positive ideal solution and distance from the negative ideal solution.
 
-### Langkah-langkah
+### Steps
 
-**1. Matriks Keputusan**
+**1. Decision Matrix**
 
-Susun nilai setiap tenant (alternatif) terhadap setiap kriteria:
+Construct a matrix of each tenant's (alternative) values against each criterion:
 
 ```
          C1       C2       C3       C4
@@ -83,179 +83,179 @@ A2  [ x21     x22     x23     x24  ]
 A3  [ x31     x32     x33     x34  ]
 ```
 
-**2. Normalisasi Matriks**
+**2. Matrix Normalization**
 
 ```
 r[i][j] = x[i][j] / sqrt( sum(x[k][j]^2) )
 ```
 
-**3. Normalisasi Terbobot**
+**3. Weighted Normalized Matrix**
 
 ```
 y[i][j] = w[j] × r[i][j]
 ```
 
-dimana `w[j]` adalah bobot kriteria ke-j (total bobot = 1.0)
+where `w[j]` is the weight of criterion j (total weights should sum to 1.0)
 
-**4. Solusi Ideal Positif (A+) dan Negatif (A-)**
+**4. Positive (A+) and Negative (A-) Ideal Solutions**
 
 ```
-A+[j] = max(y[i][j])  jika Benefit
-        min(y[i][j])  jika Cost
+A+[j] = max(y[i][j])  if Benefit
+        min(y[i][j])  if Cost
 
-A-[j] = min(y[i][j])  jika Benefit
-        max(y[i][j])  jika Cost
+A-[j] = min(y[i][j])  if Benefit
+        max(y[i][j])  if Cost
 ```
 
-**5. Jarak ke Solusi Ideal**
+**5. Distance to Ideal Solutions**
 
 ```
 D+[i] = sqrt( sum( (y[i][j] - A+[j])^2 ) )
 D-[i] = sqrt( sum( (y[i][j] - A-[j])^2 ) )
 ```
 
-**6. Nilai Preferensi**
+**6. Preference Value**
 
 ```
 V[i] = D-[i] / ( D+[i] + D-[i] )
 ```
 
-Nilai V berkisar antara 0–1. **Semakin besar V, semakin layak tenant tersebut.**
+V ranges from 0 to 1. **The higher the V value, the more eligible the tenant.**
 
-**7. Perangkingan**
+**7. Ranking**
 
-Urutkan tenant berdasarkan nilai V secara descending. Tenant dengan V ≥ threshold (default: 0.5) dinyatakan **LAYAK**.
+Sort tenants by V in descending order. Tenants with V ≥ threshold (default: 0.5) are marked as **ELIGIBLE**.
 
 ---
 
-## Cara Menjalankan
+## Getting Started
 
-### Prasyarat
+### Prerequisites
 
 - Docker >= 24
 - Docker Compose >= v2
 
-### 1. Clone repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/SuicidalDream29/spk-kelayakan-tenant.git
 cd spk-kelayakan-tenant
 ```
 
-### 2. Setup environment
+### 2. Configure environment
 
 ```bash
 cp .env.example .env
-# Edit .env sesuai kebutuhan
+# Edit .env as needed
 ```
 
-### 3. Jalankan semua service
+### 3. Start all services
 
 ```bash
 docker compose up --build -d
 ```
 
-### 4. Jalankan database migration
+### 4. Run database migrations
 
 ```bash
 docker compose exec api alembic upgrade head
 ```
 
-### 5. Akses aplikasi
+### 5. Access the application
 
-| URL | Keterangan |
+| URL | Description |
 |---|---|
 | `http://localhost` | Frontend (Dashboard) |
 | `http://localhost/docs` | Swagger UI (API docs) |
-| `http://localhost/kriteria.html` | Master Kriteria |
-| `http://localhost/tenants.html` | Data Tenant |
-| `http://localhost/topsis.html` | Kalkulasi & Ranking |
+| `http://localhost/kriteria.html` | Criteria Management |
+| `http://localhost/tenants.html` | Tenant Data |
+| `http://localhost/topsis.html` | Calculation & Ranking |
 
 ---
 
-## Cara Penggunaan
+## How to Use
 
-Ikuti urutan berikut untuk hasil yang optimal:
+Follow this order for best results:
 
-### Step 1 — Buat Kriteria
+### Step 1 — Create Criteria
 
-Masuk ke halaman **Kriteria**, klik **+ Tambah Kriteria**.
+Go to the **Criteria** page, click **+ Add Criteria**.
 
-Contoh kriteria yang umum digunakan:
+Example criteria:
 
-| Kriteria | Bobot | Jenis |
+| Criteria | Weight | Type |
 |---|---|---|
-| Penghasilan per Bulan | 0.35 | Benefit |
-| Lama Kontrak (bulan) | 0.25 | Benefit |
-| Jumlah Tanggungan | 0.20 | Cost |
-| Usia | 0.20 | Benefit |
+| Monthly Income | 0.35 | Benefit |
+| Contract Duration (months) | 0.25 | Benefit |
+| Number of Dependants | 0.20 | Cost |
+| Age | 0.20 | Benefit |
 
-> **Penting:** Total bobot semua kriteria sebaiknya = 1.0
+> **Important:** Total weight of all criteria should equal 1.0
 
-### Step 2 — Daftarkan Tenant
+### Step 2 — Register Tenants
 
-Masuk ke halaman **Tenant**, klik **+ Tambah Tenant**, isi data diri.
+Go to the **Tenant** page, click **+ Add Tenant**, fill in the personal data.
 
-### Step 3 — Input Nilai per Tenant
+### Step 3 — Input Values per Tenant
 
-Di tabel Tenant, klik ikon **clipboard** (Input Nilai) pada setiap tenant, lalu isi nilai untuk setiap kriteria.
+In the Tenant table, click the **clipboard** icon (Input Values) for each tenant, then fill in the value for each criterion.
 
-> Minimal **2 tenant** harus memiliki nilai lengkap sebelum kalkulasi.
+> At least **2 tenants** must have complete values before calculation.
 
-### Step 4 — Hitung TOPSIS
+### Step 4 — Run TOPSIS
 
-Masuk ke halaman **TOPSIS & Ranking**, klik **Hitung TOPSIS**.  
-Kalkulasi berjalan di background — hasil muncul otomatis dalam beberapa detik.
+Go to the **TOPSIS & Ranking** page, click **Calculate TOPSIS**.  
+Calculation runs in the background — results appear automatically within seconds.
 
-### Step 5 — Lihat & Cetak Laporan
+### Step 5 — View & Print Report
 
-Hasil perangkingan tampil di halaman TOPSIS.  
-Klik **Download PDF** untuk mencetak laporan resmi.
+Ranking results are displayed on the TOPSIS page.  
+Click **Download PDF** to print the official report.
 
 ---
 
 ## API Reference
 
-Dokumentasi interaktif tersedia di `http://localhost/docs`
+Interactive documentation available at `http://localhost/docs`
 
-### Kriteria
+### Criteria
 
-| Method | Endpoint | Deskripsi |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/kriteria/` | List semua kriteria |
-| POST | `/kriteria/` | Tambah kriteria baru |
-| PUT | `/kriteria/{id}` | Update kriteria |
-| DELETE | `/kriteria/{id}` | Hapus kriteria |
+| GET | `/kriteria/` | List all criteria |
+| POST | `/kriteria/` | Create new criteria |
+| PUT | `/kriteria/{id}` | Update criteria |
+| DELETE | `/kriteria/{id}` | Delete criteria |
 
-### Tenant
+### Tenants
 
-| Method | Endpoint | Deskripsi |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/tenants/` | List semua tenant |
-| POST | `/tenants/` | Tambah tenant baru |
-| GET | `/tenants/{id}` | Detail tenant |
+| GET | `/tenants/` | List all tenants |
+| POST | `/tenants/` | Create new tenant |
+| GET | `/tenants/{id}` | Get tenant detail |
 | PUT | `/tenants/{id}` | Update tenant |
-| DELETE | `/tenants/{id}` | Hapus tenant |
-| POST | `/tenants/{id}/nilai` | Input nilai kriteria |
+| DELETE | `/tenants/{id}` | Delete tenant |
+| POST | `/tenants/{id}/nilai` | Input criteria values |
 
 ### TOPSIS
 
-| Method | Endpoint | Deskripsi |
+| Method | Endpoint | Description |
 |---|---|---|
-| POST | `/topsis/hitung` | Trigger kalkulasi (async) |
-| GET | `/topsis/hasil` | Ambil hasil perangkingan |
+| POST | `/topsis/hitung` | Trigger calculation (async) |
+| GET | `/topsis/hasil` | Get ranking results |
 
-### Laporan
+### Report
 
-| Method | Endpoint | Deskripsi |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/laporan/pdf` | Download laporan PDF |
+| GET | `/laporan/pdf` | Download PDF report |
 
 ---
 
 ## CI/CD
 
-Pipeline berjalan otomatis via **GitHub Actions** di setiap push ke branch `main`.
+The pipeline runs automatically via **GitHub Actions** on every push to `main`.
 
 ```
 push to main
@@ -264,43 +264,43 @@ push to main
   [CI] Lint (ruff)
   [CI] Test (pytest)
      │
-     ▼ (jika semua pass)
-  [CD] SSH ke server
+     ▼ (if all pass)
+  [CD] SSH to server
        git pull
        docker compose up --build
        alembic upgrade head
        docker image prune
 ```
 
-### Setup CD ke server baru
+### Setting Up CD to a New Server
 
-Tambahkan secrets berikut di GitHub → Settings → Secrets → Actions:
+Add the following secrets in GitHub → Settings → Secrets → Actions:
 
-| Secret | Nilai |
+| Secret | Value |
 |---|---|
-| `DEPLOY_HOST` | IP atau domain server |
-| `DEPLOY_USER` | Username SSH (misal: `root`) |
-| `DEPLOY_SSH_KEY` | Private key SSH (isi konten `~/.ssh/id_rsa`) |
+| `DEPLOY_HOST` | Server IP or domain |
+| `DEPLOY_USER` | SSH username (e.g. `root`) |
+| `DEPLOY_SSH_KEY` | SSH private key content (`~/.ssh/id_rsa`) |
 
 ---
 
 ## Environment Variables
 
-Lihat `.env.example` untuk daftar lengkap:
+See `.env.example` for the full list:
 
-| Variable | Default | Keterangan |
+| Variable | Default | Description |
 |---|---|---|
-| `POSTGRES_USER` | — | Username PostgreSQL |
-| `POSTGRES_PASSWORD` | — | Password PostgreSQL |
-| `POSTGRES_DB` | — | Nama database |
+| `POSTGRES_USER` | — | PostgreSQL username |
+| `POSTGRES_PASSWORD` | — | PostgreSQL password |
+| `POSTGRES_DB` | — | Database name |
 | `DATABASE_URL` | — | Full connection string |
-| `REDIS_URL` | `redis://redis:6379/0` | URL Redis broker |
-| `SECRET_KEY` | — | Secret key aplikasi |
-| `THRESHOLD_LAYAK` | `0.5` | Batas nilai V dinyatakan LAYAK |
+| `REDIS_URL` | `redis://redis:6379/0` | Redis broker URL |
+| `SECRET_KEY` | — | Application secret key |
+| `THRESHOLD_LAYAK` | `0.5` | Minimum V value to be marked ELIGIBLE |
 
 ---
 
-## Struktur Project
+## Project Structure
 
 ```
 spk-kelayakan-tenant/
@@ -311,7 +311,7 @@ spk-kelayakan-tenant/
 │   │   ├── schemas.py           # Pydantic schemas
 │   │   ├── database.py          # DB connection
 │   │   ├── deps.py              # Dependency injection
-│   │   ├── topsis_engine.py     # Algoritma TOPSIS
+│   │   ├── topsis_engine.py     # TOPSIS algorithm
 │   │   ├── routers/
 │   │   │   ├── kriteria.py
 │   │   │   ├── tenants.py
@@ -328,7 +328,7 @@ spk-kelayakan-tenant/
 │   ├── css/style.css
 │   ├── js/
 │   │   ├── api.js               # HTTP client
-│   │   ├── utils.js             # Toast, modal helpers
+│   │   ├── utils.js             # Toast, modal, TableManager
 │   │   ├── kriteria.js
 │   │   ├── tenants.js
 │   │   └── topsis.js
@@ -346,6 +346,6 @@ spk-kelayakan-tenant/
 
 ---
 
-## Lisensi
+## License
 
-MIT License — bebas digunakan dan dimodifikasi.
+MIT License — free to use and modify.
