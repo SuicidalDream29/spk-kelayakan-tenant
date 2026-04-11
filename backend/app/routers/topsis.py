@@ -1,0 +1,30 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session                                                                                                                                                                                                                                                                                
+from ..deps import get_db                                                                                                                                                                                                                                                                                         
+from .. import models, schemas
+from ..tasks.topsis_task import task_hitung_topsis                                                                                                                                                                                                                                                                
+                
+router = APIRouter()
+@router.post("/hitung", status_code=202)                                                                                                                                                                                                                                                                          
+def hitung(db: Session = Depends(get_db)):
+    jumlah_kriteria = db.query(models.Kriteria).count()                                                                                                                                                                                                                                                           
+    jumlah_tenant   = db.query(models.Tenant).count()                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                  
+    if jumlah_kriteria < 2:                                                                                                                                                                                                                                                                                       
+        raise HTTPException(400, "Minimal 2 kriteria harus ada")                                                                                                                                                                                                                                                  
+    if jumlah_tenant < 2:                                                                                                                                                                                                                                                                                         
+        raise HTTPException(400, "Minimal 2 tenant harus ada")
+                                                                                                                                                                                                                                                                                                                  
+    task_hitung_topsis.delay()
+    return {"message": "Kalkulasi TOPSIS sedang diproses", "status": "queued"}
+                                                                                                                                                                                                                                                                                                                  
+@router.get("/hasil", response_model=list[schemas.HasilTopsisOut])                                                                                                                                                                                                                                                
+def hasil(db: Session = Depends(get_db)):                                                                                                                                                                                                                                                                         
+    hasil = (                                                                                                                                                                                                                                                                                                     
+        db.query(models.HasilTopsis)
+          .order_by(models.HasilTopsis.ranking)                                                                                                                                                                                                                                                                   
+          .all()
+    )                                                                                                                                                                                                                                                                                                             
+    if not hasil:
+        raise HTTPException(404, "Belum ada hasil kalkulasi, jalankan /topsis/hitung dulu")
+    return hasil                                                                                                                                                                                                                                                                                                  
