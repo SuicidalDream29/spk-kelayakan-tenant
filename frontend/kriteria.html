@@ -43,10 +43,23 @@
         <span class="card-header-title">Daftar Kriteria</span>
         <span id="bobotTotal" style="font-size:13px;color:#64748b"></span>
       </div>
+      <div class="table-toolbar">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input type="text" id="searchInput" placeholder="Cari kriteria...">
+        </div>
+        <span class="table-info" id="tableInfo"></span>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>ID</th><th>Nama Kriteria</th><th>Bobot</th><th>Jenis</th><th style="width:120px">Aksi</th></tr>
+            <tr>
+              <th data-col="id">ID</th>
+              <th data-col="nama">Nama Kriteria</th>
+              <th data-col="bobot">Bobot</th>
+              <th data-col="jenis">Jenis</th>
+              <th style="width:100px">Aksi</th>
+            </tr>
           </thead>
           <tbody id="tbody"><tr><td colspan="5"><div class="empty-state"><span class="spinner"></span></div></td></tr></tbody>
         </table>
@@ -55,7 +68,6 @@
   </div>
 </div>
 
-<!-- Modal -->
 <div class="modal-overlay" id="modalKriteria">
   <div class="modal-box">
     <div class="modal-header">

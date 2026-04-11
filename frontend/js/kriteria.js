@@ -1,13 +1,18 @@
 let editId = null;
 let kriteriaData = [];
 
-async function load() {
-  const data = await api.get("/kriteria/");
-  kriteriaData = data;
-  const total = data.reduce((s, k) => s + k.bobot, 0);
-  document.getElementById("bobotTotal").textContent = `Total bobot: ${total.toFixed(2)}`;
-
-  document.getElementById("tbody").innerHTML = data.length ? data.map(k => `
+const table = new TableManager({
+  tbodyId:  "tbody",
+  searchId: "searchInput",
+  infoId:   "tableInfo",
+  columns: [
+    { key: "id",    label: "ID",    numeric: true },
+    { key: "nama",  label: "Nama" },
+    { key: "bobot", label: "Bobot", numeric: true },
+    { key: "jenis", label: "Jenis" },
+  ],
+  emptyMsg: "Belum ada kriteria. Tambahkan kriteria pertama.",
+  renderRow: k => `
     <tr>
       <td style="color:#94a3b8">#${k.id}</td>
       <td><strong>${escHtml(k.nama)}</strong></td>
@@ -19,12 +24,25 @@ async function load() {
         <button class="btn btn-ghost btn-sm btn-icon" title="Hapus" style="color:#ef4444"
           data-action="hapus" data-id="${k.id}"><i class="bi bi-trash"></i></button>
       </td>
-    </tr>`).join("") :
-    `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-sliders"></i><p>Belum ada kriteria.</p></div></td></tr>`;
-}
+    </tr>`,
+});
 
 function escHtml(str) {
   return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+async function load() {
+  const data = await api.get("/kriteria/");
+  kriteriaData = data;
+  const total = data.reduce((s, k) => s + k.bobot, 0);
+  document.getElementById("bobotTotal").textContent = `Total bobot: ${total.toFixed(2)}`;
+  table.setData(data);
+}
+
+function resetForm() {
+  editId = null;
+  document.getElementById("form").reset();
+  document.getElementById("modalTitle").textContent = "Tambah Kriteria";
 }
 
 document.getElementById("tbody").addEventListener("click", async e => {
@@ -49,12 +67,6 @@ document.getElementById("tbody").addEventListener("click", async e => {
     } catch(err) { toast(err.message, "error"); }
   }
 });
-
-function resetForm() {
-  editId = null;
-  document.getElementById("form").reset();
-  document.getElementById("modalTitle").textContent = "Tambah Kriteria";
-}
 
 async function submitForm(e) {
   e.preventDefault();

@@ -6,13 +6,19 @@ function escHtml(str) {
   return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
-async function load() {
-  const [tenants, kriteria] = await Promise.all([api.get("/tenants/"), api.get("/kriteria/")]);
-  kriteriaList = kriteria;
-  tenantsData  = tenants;
-  document.getElementById("tenantCount").textContent = `${tenants.length} tenant terdaftar`;
-
-  document.getElementById("tbody").innerHTML = tenants.length ? tenants.map(t => `
+const table = new TableManager({
+  tbodyId:  "tbody",
+  searchId: "searchInput",
+  infoId:   "tableInfo",
+  columns: [
+    { key: "id",      numeric: true },
+    { key: "nama" },
+    { key: "nik" },
+    { key: "no_telp" },
+    { key: "alamat" },
+  ],
+  emptyMsg: "Belum ada data tenant.",
+  renderRow: t => `
     <tr>
       <td style="color:#94a3b8">#${t.id}</td>
       <td><strong>${escHtml(t.nama)}</strong></td>
@@ -28,8 +34,20 @@ async function load() {
         <button class="btn btn-ghost btn-sm btn-icon" title="Hapus" style="color:#ef4444"
           data-action="hapus" data-id="${t.id}"><i class="bi bi-trash"></i></button>
       </td>
-    </tr>`).join("") :
-    `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>Belum ada data tenant.</p></div></td></tr>`;
+    </tr>`,
+});
+
+async function load() {
+  const [tenants, kriteria] = await Promise.all([api.get("/tenants/"), api.get("/kriteria/")]);
+  kriteriaList = kriteria;
+  tenantsData  = tenants;
+  table.setData(tenants);
+}
+
+function resetForm() {
+  editId = null;
+  document.getElementById("formTenant").reset();
+  document.getElementById("modalTitle").textContent = "Tambah Tenant";
 }
 
 document.getElementById("tbody").addEventListener("click", async e => {
@@ -84,12 +102,6 @@ document.getElementById("tbody").addEventListener("click", async e => {
     catch(err) { toast(err.message, "error"); }
   }
 });
-
-function resetForm() {
-  editId = null;
-  document.getElementById("formTenant").reset();
-  document.getElementById("modalTitle").textContent = "Tambah Tenant";
-}
 
 async function submitTenant(e) {
   e.preventDefault();

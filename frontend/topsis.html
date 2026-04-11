@@ -28,10 +28,10 @@
   <header class="topbar">
     <span class="topbar-title">TOPSIS & Ranking</span>
     <div class="topbar-actions">
-      <button id="btnHitung" class="btn btn-primary btn-sm" onclick="hitung()">
+      <button id="btnHitung" class="btn btn-primary btn-sm">
         <i class="bi bi-calculator"></i> Hitung TOPSIS
       </button>
-      <button id="btnPDF" class="btn btn-success btn-sm" onclick="window.open('/laporan/pdf','_blank')">
+      <button id="btnPDF" class="btn btn-success btn-sm">
         <i class="bi bi-file-earmark-pdf"></i> Download PDF
       </button>
     </div>
@@ -39,17 +39,30 @@
   <div class="content">
     <div class="alert-info">
       <i class="bi bi-info-circle"></i>
-      Pastikan semua tenant sudah diinput nilainya. Kalkulasi berjalan di background — hasil akan muncul otomatis.
+      Pastikan semua tenant sudah diinput nilainya. Kalkulasi berjalan di background — hasil muncul otomatis.
     </div>
     <div class="card">
       <div class="card-header">
         <span class="card-header-title"><i class="bi bi-trophy" style="color:#f59e0b"></i> &nbsp;Hasil Perangkingan</span>
         <span id="lastCalc" style="font-size:12px;color:#94a3b8"></span>
       </div>
+      <div class="table-toolbar">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input type="text" id="searchInput" placeholder="Cari nama, NIK, status...">
+        </div>
+        <span class="table-info" id="tableInfo"></span>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Ranking</th><th>Nama Tenant</th><th>NIK</th><th>Nilai Preferensi</th><th>Status</th></tr>
+            <tr>
+              <th data-col="ranking">Ranking</th>
+              <th data-col="tenant.nama">Nama Tenant</th>
+              <th data-col="tenant.nik">NIK</th>
+              <th data-col="nilai_preferensi">Nilai Preferensi</th>
+              <th data-col="status">Status</th>
+            </tr>
           </thead>
           <tbody id="tbody"><tr><td colspan="5"><div class="empty-state"><span class="spinner"></span></div></td></tr></tbody>
         </table>
