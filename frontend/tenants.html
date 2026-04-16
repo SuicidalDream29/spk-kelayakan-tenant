@@ -19,6 +19,7 @@
     <a href="/" class="nav-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
     <a href="/kriteria.html" class="nav-item"><i class="bi bi-sliders"></i> Kriteria</a>
     <a href="/tenants.html" class="nav-item"><i class="bi bi-people"></i> Tenant</a>
+    <a href="/kontrak.html" class="nav-item"><i class="bi bi-table"></i> Nilai Kontrak</a>
     <a href="/topsis.html" class="nav-item"><i class="bi bi-bar-chart-steps"></i> TOPSIS & Ranking</a>
   </nav>
   <div class="sidebar-footer">v1.0.0 &mdash; SPK System</div>
@@ -54,10 +55,11 @@
               <th data-col="nik">NIK</th>
               <th data-col="no_telp">No. Telepon</th>
               <th data-col="alamat">Alamat</th>
+              <th data-col="nilai_lengkap">Status Nilai</th>
               <th style="width:120px">Aksi</th>
             </tr>
           </thead>
-          <tbody id="tbody"><tr><td colspan="6"><div class="empty-state"><span class="spinner"></span></div></td></tr></tbody>
+          <tbody id="tbody"><tr><td colspan="7"><div class="empty-state"><span class="spinner"></span></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -119,6 +121,7 @@
 </div>
 
 <div id="toast-container"></div>
+<script src="/js/auth.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/utils.js"></script>
 <script src="/js/tenants.js"></script>

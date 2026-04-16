@@ -52,6 +52,15 @@ def delete_tenant(id: int, db: Session = Depends(get_db)):
     db.delete(tenant)
     db.commit()
 
+
+@router.get("/{id}/nilai")
+def get_nilai(id: int, db: Session = Depends(get_db)):
+    tenant = db.query(models.Tenant).filter(models.Tenant.id == id).first()
+    if not tenant:
+        raise HTTPException(404, "Tenant tidak ditemukan")
+    rows = db.query(models.NilaiTenant).filter(models.NilaiTenant.tenant_id == id).all()
+    return [{"kriteria_id": r.kriteria_id, "nilai": r.nilai} for r in rows]
+
 @router.post("/{id}/nilai", status_code=201)
 def input_nilai(id: int, payload: schemas.TenantNilaiCreate, db: Session = Depends(get_db)):
     tenant = db.query(models.Tenant).filter(models.Tenant.id == id).first()

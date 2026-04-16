@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — SPK Kelayakan Tenant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+  <style>
+    body { background: #f1f5f9; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
+    .login-wrap { width:100%; max-width:400px; padding:16px; }
+    .login-card { background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:40px 36px; }
+    .login-logo { text-align:center; margin-bottom:28px; }
+    .login-logo .brand-title { font-size:20px; font-weight:800; color:#1e293b; }
+    .login-logo .brand-sub { font-size:12px; color:#94a3b8; margin-top:4px; }
+    .login-title { font-size:22px; font-weight:700; color:#1e293b; margin-bottom:6px; }
+    .login-sub { font-size:13px; color:#64748b; margin-bottom:28px; }
+    .input-icon { position:relative; }
+    .input-icon i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:15px; pointer-events:none; }
+    .input-icon input { padding-left:38px !important; }
+    .btn-login { width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:8px; }
+    .login-error { background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:8px; padding:10px 14px; font-size:13px; margin-bottom:16px; display:none; }
+    .login-error.show { display:flex; align-items:center; gap:8px; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand-title">SPK Kelayakan Tenant</div>
+      <div class="brand-sub">Metode TOPSIS</div>
+    </div>
+    <div class="login-title">Selamat Datang</div>
+    <div class="login-sub">Masuk untuk mengakses dashboard</div>
+
+    <div class="login-error" id="loginError">
+      <i class="bi bi-exclamation-circle"></i>
+      <span id="errorMsg">Username atau password salah</span>
+    </div>
+
+    <form id="formLogin">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <div class="input-icon">
+          <i class="bi bi-person"></i>
+          <input type="text" id="username" class="form-control" placeholder="Masukkan username" required autofocus>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-icon">
+          <i class="bi bi-lock"></i>
+          <input type="password" id="password" class="form-control" placeholder="Masukkan password" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-login" id="btnLogin">
+        <i class="bi bi-box-arrow-in-right"></i> Masuk
+      </button>
+    </form>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script>
+  // Redirect if already logged in
+  if (localStorage.getItem('token')) window.location.href = '/';
+
+  document.getElementById('formLogin').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = document.getElementById('btnLogin');
+    const errBox = document.getElementById('loginError');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Masuk...';
+    errBox.classList.remove('show');
+
+    const body = new URLSearchParams({
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value,
+    });
+
+    try {
+      const res = await fetch('/auth/login', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Login gagal');
+      localStorage.setItem('token', data.access_token);
+      window.location.href = '/';
+    } catch(err) {
+      document.getElementById('errorMsg').textContent = err.message;
+      errBox.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Masuk';
+    }
+  });
+</script>
+</body>
+</html>

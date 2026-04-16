@@ -16,6 +16,7 @@ const table = new TableManager({
     { key: "nik" },
     { key: "no_telp" },
     { key: "alamat" },
+    { key: "nilai_lengkap", numeric: true },
   ],
   emptyMsg: "Belum ada data tenant.",
   renderRow: t => `
@@ -26,6 +27,11 @@ const table = new TableManager({
       <td>${escHtml(t.no_telp)}</td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
           title="${escHtml(t.alamat)}">${escHtml(t.alamat)}</td>
+      <td>
+        ${t.nilai_lengkap
+          ? '<span class="badge badge-green"><i class="bi bi-check-circle"></i> Lengkap</span>'
+          : '<span class="badge badge-orange"><i class="bi bi-exclamation-circle"></i> Belum diisi</span>'}
+      </td>
       <td>
         <button class="btn btn-ghost btn-sm btn-icon" title="Input Nilai"
           data-action="nilai" data-id="${t.id}"><i class="bi bi-clipboard-data"></i></button>
@@ -40,8 +46,20 @@ const table = new TableManager({
 async function load() {
   const [tenants, kriteria] = await Promise.all([api.get("/tenants/"), api.get("/kriteria/")]);
   kriteriaList = kriteria;
-  tenantsData  = tenants;
-  table.setData(tenants);
+
+  // Enrich each tenant with nilai_lengkap flag
+  const enriched = await Promise.all(tenants.map(async t => {
+    try {
+      const nilaiRows = await api.get(`/tenants/${t.id}/nilai`);
+      const filled = kriteriaList.every(k => nilaiRows.some(n => n.kriteria_id === k.id));
+      return { ...t, _nilaiRows: nilaiRows, nilai_lengkap: filled };
+    } catch {
+      return { ...t, _nilaiRows: [], nilai_lengkap: false };
+    }
+  }));
+
+  tenantsData = enriched;
+  table.setData(enriched);
 }
 
 function resetForm() {
@@ -70,14 +88,23 @@ document.getElementById("tbody").addEventListener("click", async e => {
   if (btn.dataset.action === "nilai") {
     if (!kriteriaList.length) { toast("Tambahkan kriteria dulu sebelum input nilai", "error"); return; }
     document.getElementById("nilaiTenantNama").textContent = t.nama;
+
+    // Pre-fill existing values
+    const existingMap = {};
+    (t._nilaiRows || []).forEach(n => { existingMap[n.kriteria_id] = n.nilai; });
+
     document.getElementById("nilaiFields").innerHTML = kriteriaList.map(k => `
       <div class="form-group">
         <label class="form-label">
           ${escHtml(k.nama)}
           <span class="badge ${k.jenis === 'benefit' ? 'badge-green' : 'badge-orange'}" style="margin-left:6px">${k.jenis}</span>
         </label>
-        <input type="number" step="any" class="form-control" id="nilai_${k.id}" placeholder="Masukkan nilai" required>
+        <input type="number" step="any" class="form-control" id="nilai_${k.id}"
+          placeholder="Masukkan nilai"
+          value="${existingMap[k.id] !== undefined ? existingMap[k.id] : ''}"
+          required>
       </div>`).join("");
+
     document.getElementById("formNilai").onsubmit = async (ev) => {
       ev.preventDefault();
       const submitBtn = document.getElementById("btnSubmitNilai");
@@ -90,6 +117,7 @@ document.getElementById("tbody").addEventListener("click", async e => {
         await api.post(`/tenants/${id}/nilai`, { nilai });
         closeModal("modalNilai");
         toast("Nilai berhasil disimpan", "success");
+        load();
       } catch(err) { toast(err.message, "error"); }
       finally { submitBtn.disabled = false; submitBtn.textContent = "Simpan Nilai"; }
     };
