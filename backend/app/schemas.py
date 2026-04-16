@@ -1,5 +1,4 @@
 from pydantic import BaseModel, field_validator
-from typing import Optional
 from datetime import datetime
 from app.models import JenisKriteria
                                                                                                                                                                                                                                                                                                                   
@@ -15,8 +14,10 @@ class KriteriaBase(BaseModel):
             raise ValueError("Bobot harus antara 0 dan 1")
         return v                                                                                                                                                                                                                                                                                                  
  
-class KriteriaCreate(KriteriaBase): pass                                                                                                                                                                                                                                                                          
-class KriteriaUpdate(KriteriaBase): pass
+class KriteriaCreate(KriteriaBase):
+    pass                                                                                                                                                                                                                                                                          
+class KriteriaUpdate(KriteriaBase):
+    pass
 class KriteriaOut(KriteriaBase):                                                                                                                                                                                                                                                                                  
     id: int
     model_config = {"from_attributes": True}                                                                                                                                                                                                                                                                      
@@ -28,8 +29,10 @@ class TenantBase(BaseModel):
     no_telp: str
     alamat: str                                                                                                                                                                                                                                                                                                   
                 
-class TenantCreate(TenantBase): pass
-class TenantUpdate(TenantBase): pass
+class TenantCreate(TenantBase):
+    pass
+class TenantUpdate(TenantBase):
+    pass
 class TenantOut(TenantBase):
     id: int
     model_config = {"from_attributes": True}                                                                                                                                                                                                                                                                      
