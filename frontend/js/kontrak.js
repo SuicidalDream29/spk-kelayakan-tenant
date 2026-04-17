@@ -1,6 +1,8 @@
 let kriteriaList = [];
 let allData = [];
 let filtered = [];
+let sortKey = "nama";
+let sortDir = "asc";
 
 function escHtml(str) {
   return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -29,24 +31,66 @@ function renderSummary() {
     </div>`;
 }
 
+function sortIcon(key) {
+  if (sortKey !== key) return '<span class="sort-icon"></span>';
+  return `<span class="sort-icon"></span>`;
+}
+
 function renderHead() {
+  const sortable = [
+    { key: "id",     label: "#",           style: "min-width:40px" },
+    { key: "nama",   label: "Nama Tenant", style: "min-width:160px" },
+  ];
+
   document.getElementById("matrixHead").innerHTML = `
     <tr>
-      <th style="min-width:40px">#</th>
-      <th style="min-width:160px">Nama Tenant</th>
+      ${sortable.map(col => `
+        <th style="${col.style}" data-sort="${col.key}" class="sortable-th ${sortKey === col.key ? sortDir : ''}">
+          ${col.label}<span class="sort-icon"></span>
+        </th>`).join("")}
       ${kriteriaList.map(k => `
         <th style="min-width:120px;text-align:center">
           ${escHtml(k.nama)}
           <br><span class="badge ${k.jenis==='benefit'?'badge-green':'badge-orange'}" style="font-size:10px;margin-top:3px">${k.jenis} &middot; ${k.bobot}</span>
         </th>`).join("")}
-      <th style="min-width:110px;text-align:center">Status</th>
+      <th style="min-width:110px;text-align:center" data-sort="status" class="sortable-th ${sortKey === 'status' ? sortDir : ''}">
+        Status<span class="sort-icon"></span>
+      </th>
       <th style="min-width:70px;text-align:center">Aksi</th>
     </tr>`;
+
+  // Bind sort click
+  document.querySelectorAll(".sortable-th").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      if (sortKey === key) { sortDir = sortDir === "asc" ? "desc" : "asc"; }
+      else { sortKey = key; sortDir = "asc"; }
+      renderHead();
+      applyFilter();
+    });
+  });
+}
+
+function applySort(data) {
+  return [...data].sort((a, b) => {
+    let va, vb;
+    if (sortKey === "id")     { va = a.tenant.id;   vb = b.tenant.id;   }
+    if (sortKey === "nama")   { va = a.tenant.nama.toLowerCase(); vb = b.tenant.nama.toLowerCase(); }
+    if (sortKey === "status") {
+      const isA = kriteriaList.every(k => a.nilaiMap[k.id] !== undefined);
+      const isB = kriteriaList.every(k => b.nilaiMap[k.id] !== undefined);
+      va = isA ? 1 : 0; vb = isB ? 1 : 0;
+    }
+    if (va === undefined) return 0;
+    const cmp = typeof va === "number" ? va - vb : va < vb ? -1 : va > vb ? 1 : 0;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
 }
 
 function applyFilter() {
   const q = (document.getElementById("searchInput").value || "").toLowerCase();
   filtered = q ? allData.filter(d => d.tenant.nama.toLowerCase().includes(q)) : [...allData];
+  filtered = applySort(filtered);
   renderBody();
   document.getElementById("tableInfo").textContent =
     filtered.length === allData.length
@@ -58,7 +102,7 @@ function renderBody() {
   const tbody = document.getElementById("matrixBody");
   if (!filtered.length) {
     const cols = 3 + kriteriaList.length;
-    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:32px;color:#94a3b8">Tidak ada data.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${cols}"><div class="empty-state"><i class="bi bi-search"></i><p>Tidak ada data.</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map(d => {
@@ -72,10 +116,10 @@ function renderBody() {
       </td>`;
     }).join("");
     return `<tr>
-      <td style="color:#94a3b8">#${d.tenant.id}</td>
+      <td style="color:var(--text-3)">#${d.tenant.id}</td>
       <td>
         <strong>${escHtml(d.tenant.nama)}</strong><br>
-        <span style="font-size:11px;color:#94a3b8;font-family:monospace">${escHtml(d.tenant.nik)}</span>
+        <span style="font-size:11px;color:var(--text-3);font-family:monospace">${escHtml(d.tenant.nik)}</span>
       </td>
       ${cells}
       <td style="text-align:center">
