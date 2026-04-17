@@ -9,8 +9,11 @@
   <link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-<aside class="sidebar">
+<button class="hamburger" id="hamburger"><i class="bi bi-list"></i></button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
+    <div class="brand-icon">🏢</div>
     <div class="brand-title">SPK Kelayakan Tenant</div>
     <div class="brand-sub">Metode TOPSIS</div>
   </div>
@@ -22,12 +25,14 @@
     <a href="/kontrak.html" class="nav-item"><i class="bi bi-table"></i> Nilai Kontrak</a>
     <a href="/topsis.html" class="nav-item"><i class="bi bi-bar-chart-steps"></i> TOPSIS & Ranking</a>
   </nav>
-  <div class="sidebar-footer">v1.0.0 &mdash; SPK System</div>
+  <div class="sidebar-footer" id="sidebarFooter">v1.0.0 &mdash; SPK System</div>
 </aside>
 
 <div class="main">
   <header class="topbar">
-    <span class="topbar-title">Master Kriteria</span>
+    <div class="topbar-left">
+      <div class="topbar-title">Master Kriteria</div>
+    </div>
     <div class="topbar-actions">
       <button class="btn btn-primary btn-sm" onclick="openModal('modalKriteria'); resetForm()">
         <i class="bi bi-plus-lg"></i> Tambah Kriteria
@@ -42,7 +47,7 @@
     <div class="card">
       <div class="card-header">
         <span class="card-header-title">Daftar Kriteria</span>
-        <span id="bobotTotal" style="font-size:13px;color:#64748b"></span>
+        <span id="bobotTotal" style="font-size:13px;color:var(--text-3)"></span>
       </div>
       <div class="table-toolbar">
         <div class="search-box">
@@ -82,7 +87,7 @@
           <input type="text" id="nama" class="form-control" placeholder="cth: Penghasilan per Bulan" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Bobot <span style="color:#94a3b8;font-weight:400">(0.01 – 1.00)</span></label>
+          <label class="form-label">Bobot <span style="color:var(--text-3);font-weight:400">(0.01 – 1.00)</span></label>
           <input type="number" id="bobot" class="form-control" step="0.01" min="0.01" max="1" placeholder="0.25" required>
         </div>
         <div class="form-group">
@@ -106,5 +111,15 @@
 <script src="/js/api.js"></script>
 <script src="/js/utils.js"></script>
 <script src="/js/kriteria.js"></script>
+<script>
+document.getElementById("hamburger").onclick = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+};
+document.getElementById("sidebarOverlay").onclick = () => {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("open");
+};
+</script>
 </body>
 </html>

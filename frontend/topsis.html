@@ -9,8 +9,12 @@
   <link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-<aside class="sidebar">
+<button class="hamburger" id="hamburger"><i class="bi bi-list"></i></button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
+    <div class="brand-icon">🏢</div>
     <div class="brand-title">SPK Kelayakan Tenant</div>
     <div class="brand-sub">Metode TOPSIS</div>
   </div>
@@ -22,30 +26,46 @@
     <a href="/kontrak.html" class="nav-item"><i class="bi bi-table"></i> Nilai Kontrak</a>
     <a href="/topsis.html" class="nav-item"><i class="bi bi-bar-chart-steps"></i> TOPSIS & Ranking</a>
   </nav>
-  <div class="sidebar-footer">v1.0.0 &mdash; SPK System</div>
+  <div class="sidebar-footer" id="sidebarFooter">v1.0.0 &mdash; SPK System</div>
 </aside>
 
 <div class="main">
   <header class="topbar">
-    <span class="topbar-title">TOPSIS & Ranking</span>
+    <div class="topbar-left">
+      <div>
+        <div class="topbar-title">TOPSIS & Ranking</div>
+        <div class="topbar-sub" id="lastCalc"></div>
+      </div>
+    </div>
     <div class="topbar-actions">
       <button id="btnHitung" class="btn btn-primary btn-sm">
         <i class="bi bi-calculator"></i> Hitung TOPSIS
       </button>
       <button id="btnPDF" class="btn btn-success btn-sm">
-        <i class="bi bi-file-earmark-pdf"></i> Download PDF
+        <i class="bi bi-file-earmark-pdf"></i> PDF
       </button>
     </div>
   </header>
+
   <div class="content">
     <div class="alert-info">
       <i class="bi bi-info-circle"></i>
       Pastikan semua tenant sudah diinput nilainya. Kalkulasi berjalan di background — hasil muncul otomatis.
     </div>
+
+    <div class="card" id="chartCard" style="display:none;margin-bottom:20px">
+      <div class="card-header">
+        <span class="card-header-title"><i class="bi bi-bar-chart-line" style="color:var(--accent)"></i> Grafik Nilai Preferensi</span>
+        <span style="font-size:12px;color:var(--text-3)">Hijau = Layak &nbsp;·&nbsp; Merah = Tidak Layak</span>
+      </div>
+      <div class="chart-wrap" style="padding:20px">
+        <canvas id="chartBar" style="max-height:280px"></canvas>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header">
-        <span class="card-header-title"><i class="bi bi-trophy" style="color:#f59e0b"></i> &nbsp;Hasil Perangkingan</span>
-        <span id="lastCalc" style="font-size:12px;color:#94a3b8"></span>
+        <span class="card-header-title"><i class="bi bi-trophy" style="color:#f59e0b"></i> Hasil Perangkingan</span>
       </div>
       <div class="table-toolbar">
         <div class="search-box">
@@ -73,9 +93,52 @@
 </div>
 
 <div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/utils.js"></script>
+<script>
+let barChart = null;
+window._onTopsisData = function(data) {
+  const card = document.getElementById("chartCard");
+  if (!data.length) { card.style.display = "none"; if (barChart) { barChart.destroy(); barChart = null; } return; }
+  card.style.display = "";
+  const ctx = document.getElementById("chartBar").getContext("2d");
+  if (barChart) barChart.destroy();
+  const sorted = [...data].sort((a,b) => b.nilai_preferensi - a.nilai_preferensi);
+  barChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sorted.map(h => h.tenant.nama),
+      datasets: [{
+        label: "Nilai Preferensi",
+        data: sorted.map(h => h.nilai_preferensi),
+        backgroundColor: sorted.map(h => h.status === "LAYAK" ? "rgba(16,185,129,.8)" : "rgba(239,68,68,.75)"),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(4)}` } } },
+      scales: {
+        y: { beginAtZero: true, max: 1, grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 30 } }
+      },
+      animation: { duration: 700 }
+    }
+  });
+};
+
+// Sidebar toggle
+document.getElementById("hamburger").onclick = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+};
+document.getElementById("sidebarOverlay").onclick = () => {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("open");
+};
+</script>
 <script src="/js/topsis.js"></script>
 </body>
 </html>

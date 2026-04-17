@@ -11,8 +11,12 @@
 </head>
 <body>
 
-<aside class="sidebar">
+<button class="hamburger" id="hamburger" aria-label="Menu"><i class="bi bi-list"></i></button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
+    <div class="brand-icon">🏢</div>
     <div class="brand-title">SPK Kelayakan Tenant</div>
     <div class="brand-sub">Metode TOPSIS</div>
   </div>
@@ -24,16 +28,22 @@
     <a href="/kontrak.html" class="nav-item"><i class="bi bi-table"></i> Nilai Kontrak</a>
     <a href="/topsis.html" class="nav-item"><i class="bi bi-bar-chart-steps"></i> TOPSIS & Ranking</a>
   </nav>
-  <div class="sidebar-footer">v1.0.0 &mdash; SPK System</div>
+  <div class="sidebar-footer" id="sidebarFooter">v1.0.0 &mdash; SPK System</div>
 </aside>
 
 <div class="main">
   <header class="topbar">
-    <span class="topbar-title">Dashboard</span>
+    <div class="topbar-left">
+      <div>
+        <div class="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="greetingDate"></div>
+      </div>
+    </div>
     <div class="topbar-actions">
       <a href="/topsis.html" class="btn btn-primary btn-sm"><i class="bi bi-calculator"></i> Hitung TOPSIS</a>
     </div>
   </header>
+
   <div class="content">
     <div class="stats-grid">
       <div class="stat-card">
@@ -44,7 +54,7 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon blue" style="background:#eff6ff;color:#3b82f6"><i class="bi bi-people"></i></div>
+        <div class="stat-icon blue"><i class="bi bi-people"></i></div>
         <div class="stat-info">
           <div class="stat-label">Total Tenant</div>
           <div class="stat-value" id="totalTenant"><span class="spinner"></span></div>
@@ -66,18 +76,32 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <span class="card-header-title"><i class="bi bi-trophy" style="color:#f59e0b"></i> &nbsp;Ranking Terakhir</span>
-        <a href="/topsis.html" class="btn btn-ghost btn-sm">Lihat Semua <i class="bi bi-arrow-right"></i></a>
+    <div class="dash-grid">
+      <!-- Ranking table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title"><i class="bi bi-trophy" style="color:#f59e0b"></i> Ranking Terakhir</span>
+          <a href="/topsis.html" class="btn btn-ghost btn-sm">Lihat Semua <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Nama Tenant</th><th>NIK</th><th>Nilai Preferensi</th><th>Status</th></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>#</th><th>Nama Tenant</th><th>NIK</th><th>Nilai Preferensi</th><th>Status</th></tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+
+      <!-- Donut chart -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title"><i class="bi bi-pie-chart" style="color:var(--accent)"></i> Distribusi Status</span>
+        </div>
+        <div class="chart-wrap" style="display:flex;flex-direction:column;align-items:center;padding:24px 20px">
+          <canvas id="chartDonut" width="240" height="240" style="max-width:220px;max-height:220px"></canvas>
+          <div id="chartLegend" style="margin-top:20px;display:flex;gap:20px;font-size:13px"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -85,15 +109,49 @@
 
 <div id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/utils.js"></script>
 <script>
+// Greeting
+const now = new Date();
+document.getElementById("greetingDate").textContent = now.toLocaleDateString("id-ID", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+
+let donutChart = null;
+
+function renderDonut(layak, tidak) {
+  const ctx = document.getElementById("chartDonut").getContext("2d");
+  if (donutChart) donutChart.destroy();
+  if (layak === 0 && tidak === 0) {
+    document.getElementById("chartLegend").innerHTML = '<span style="color:var(--text-3)">Belum ada data kalkulasi</span>';
+    return;
+  }
+  donutChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Layak", "Tidak Layak"],
+      datasets: [{ data: [layak, tidak], backgroundColor: ["#10b981","#ef4444"], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      cutout: "68%",
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } } },
+      animation: { animateRotate: true, duration: 800 }
+    }
+  });
+  const total = layak + tidak;
+  document.getElementById("chartLegend").innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0"></span> Layak <strong>${layak}</strong> <span style="color:var(--text-3)">(${(layak/total*100).toFixed(0)}%)</span></div>
+    <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0"></span> Tidak Layak <strong>${tidak}</strong></div>`;
+}
+
+const rankClass = r => r === 1 ? "rank-1" : r === 2 ? "rank-2" : r === 3 ? "rank-3" : "rank-n";
+
 async function loadDashboard() {
   try {
     const [kriteria, tenants] = await Promise.all([api.get("/kriteria/"), api.get("/tenants/")]);
-    document.getElementById("totalKriteria").textContent = kriteria.length;
-    document.getElementById("totalTenant").textContent   = tenants.length;
+    animateCount("totalKriteria", kriteria.length);
+    animateCount("totalTenant", tenants.length);
   } catch(e) {
     document.getElementById("totalKriteria").textContent = "-";
     document.getElementById("totalTenant").textContent   = "-";
@@ -102,21 +160,27 @@ async function loadDashboard() {
   try {
     const hasil = await api.get("/topsis/hasil");
     const layak = hasil.filter(h => h.status === "LAYAK").length;
-    document.getElementById("totalLayak").textContent = layak;
-    document.getElementById("totalTidak").textContent = hasil.length - layak;
+    animateCount("totalLayak", layak);
+    animateCount("totalTidak", hasil.length - layak);
+    renderDonut(layak, hasil.length - layak);
 
-    const rankClass = r => r === 1 ? "rank-1" : r === 2 ? "rank-2" : r === 3 ? "rank-3" : "rank-n";
     document.getElementById("tbody").innerHTML = hasil.slice(0, 5).map(h => `
       <tr>
         <td><span class="rank-badge ${rankClass(h.ranking)}">${h.ranking}</span></td>
         <td><strong>${h.tenant.nama}</strong></td>
-        <td style="color:#64748b">${h.tenant.nik}</td>
-        <td><strong>${h.nilai_preferensi.toFixed(4)}</strong></td>
+        <td style="color:var(--text-3);font-family:monospace;font-size:12px">${h.tenant.nik}</td>
+        <td>
+          <div class="prog-wrap">
+            <div class="prog-bar"><div class="prog-fill" style="width:${(h.nilai_preferensi*100).toFixed(1)}%"></div></div>
+            <strong style="font-size:12px;min-width:46px;text-align:right">${h.nilai_preferensi.toFixed(4)}</strong>
+          </div>
+        </td>
         <td><span class="badge ${h.status === 'LAYAK' ? 'badge-green' : 'badge-red'}">${h.status}</span></td>
       </tr>`).join("");
   } catch(_) {
     document.getElementById("totalLayak").textContent = "-";
     document.getElementById("totalTidak").textContent = "-";
+    renderDonut(0, 0);
     document.getElementById("tbody").innerHTML = `
       <tr><td colspan="5">
         <div class="empty-state">
@@ -126,6 +190,28 @@ async function loadDashboard() {
       </td></tr>`;
   }
 }
+
+function animateCount(id, target) {
+  const el = document.getElementById(id);
+  let current = 0;
+  const step = Math.max(1, Math.round(target / 20));
+  const interval = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current;
+    if (current >= target) clearInterval(interval);
+  }, 40);
+}
+
+// Sidebar toggle
+document.getElementById("hamburger").onclick = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+};
+document.getElementById("sidebarOverlay").onclick = () => {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("open");
+};
+
 loadDashboard();
 </script>
 </body>

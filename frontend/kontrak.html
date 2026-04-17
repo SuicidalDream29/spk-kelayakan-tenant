@@ -9,8 +9,11 @@
   <link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-<aside class="sidebar">
+<button class="hamburger" id="hamburger"><i class="bi bi-list"></i></button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
+    <div class="brand-icon">🏢</div>
     <div class="brand-title">SPK Kelayakan Tenant</div>
     <div class="brand-sub">Metode TOPSIS</div>
   </div>
@@ -22,27 +25,27 @@
     <a href="/kontrak.html" class="nav-item"><i class="bi bi-table"></i> Nilai Kontrak</a>
     <a href="/topsis.html" class="nav-item"><i class="bi bi-bar-chart-steps"></i> TOPSIS & Ranking</a>
   </nav>
-  <div class="sidebar-footer">v1.0.0 &mdash; SPK System</div>
+  <div class="sidebar-footer" id="sidebarFooter">v1.0.0 &mdash; SPK System</div>
 </aside>
 
 <div class="main">
   <header class="topbar">
-    <span class="topbar-title">Nilai Kontrak Tenant</span>
+    <div class="topbar-left">
+      <div class="topbar-title">Nilai Kontrak Tenant</div>
+    </div>
     <div class="topbar-actions">
-      <button class="btn btn-primary btn-sm" id="btnRefresh">
+      <button class="btn btn-ghost btn-sm" id="btnRefresh">
         <i class="bi bi-arrow-clockwise"></i> Refresh
       </button>
     </div>
   </header>
   <div class="content">
-
-    <!-- Summary cards -->
     <div class="stats-grid" id="summaryCards" style="margin-bottom:24px"></div>
 
     <div class="card">
       <div class="card-header">
         <span class="card-header-title">Matriks Nilai per Tenant</span>
-        <span style="font-size:12px;color:#94a3b8" id="lastUpdated"></span>
+        <span style="font-size:12px;color:var(--text-3)" id="lastUpdated"></span>
       </div>
       <div class="table-toolbar">
         <div class="search-box">
@@ -60,17 +63,15 @@
         </table>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- Modal Edit Nilai -->
 <div class="modal-overlay" id="modalNilai">
   <div class="modal-box">
     <div class="modal-header">
       <div>
         <span class="modal-title">Edit Nilai Kriteria</span>
-        <div style="font-size:12px;color:#64748b;margin-top:2px" id="nilaiTenantNama"></div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:2px" id="nilaiTenantNama"></div>
       </div>
       <button class="modal-close" onclick="closeModal('modalNilai')">×</button>
     </div>
@@ -89,5 +90,15 @@
 <script src="/js/api.js"></script>
 <script src="/js/utils.js"></script>
 <script src="/js/kontrak.js"></script>
+<script>
+document.getElementById("hamburger").onclick = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+};
+document.getElementById("sidebarOverlay").onclick = () => {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("open");
+};
+</script>
 </body>
 </html>
