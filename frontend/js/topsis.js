@@ -108,12 +108,29 @@ async function hitung() {
 }
 
 async function downloadPDF() {
+  const btn = document.getElementById("btnPDF");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
   try {
-    const hasil = await api.get("/topsis/hasil");
-    if (!hasil.length) { toast("Belum ada hasil kalkulasi untuk dicetak", "error"); return; }
-    window.open("/laporan/pdf", "_blank");
-  } catch(_) {
-    toast("Belum ada hasil kalkulasi untuk dicetak", "error");
+    const token = localStorage.getItem("token");
+    const res = await fetch("/laporan/pdf", {
+      headers: { Authorization: "Bearer " + token }
+    });
+    if (res.status === 404) { toast("Belum ada hasil kalkulasi untuk dicetak", "error"); return; }
+    if (!res.ok) throw new Error(await res.text());
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = "laporan_topsis.pdf";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast("PDF berhasil diunduh", "success");
+  } catch(err) {
+    toast(err.message || "Gagal mengunduh PDF", "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-file-earmark-pdf"></i> PDF';
   }
 }
 
