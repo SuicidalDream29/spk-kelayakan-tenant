@@ -34,7 +34,7 @@
       <div class="topbar-title">Master Kriteria</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-primary btn-sm" onclick="openModal('modalKriteria'); resetForm()">
+      <button class="btn btn-primary btn-sm" id="btnTambahKriteria">
         <i class="bi bi-plus-lg"></i> Tambah Kriteria
       </button>
     </div>
@@ -78,9 +78,9 @@
   <div class="modal-box">
     <div class="modal-header">
       <span class="modal-title" id="modalTitle">Tambah Kriteria</span>
-      <button class="modal-close" onclick="closeModal('modalKriteria')">×</button>
+      <button class="modal-close" data-close-modal="modalKriteria">×</button>
     </div>
-    <form id="form" onsubmit="submitForm(event)">
+    <form id="form">
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">Nama Kriteria</label>
@@ -99,7 +99,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost" onclick="closeModal('modalKriteria')">Batal</button>
+        <button type="button" class="btn btn-ghost" data-close-modal="modalKriteria">Batal</button>
         <button type="submit" class="btn btn-primary" id="btnSubmit">Simpan</button>
       </div>
     </form>
@@ -111,15 +111,5 @@
 <script src="/js/api.js"></script>
 <script src="/js/utils.js"></script>
 <script src="/js/kriteria.js"></script>
-<script>
-document.getElementById("hamburger").onclick = () => {
-  document.getElementById("sidebar").classList.toggle("open");
-  document.getElementById("sidebarOverlay").classList.toggle("open");
-};
-document.getElementById("sidebarOverlay").onclick = () => {
-  document.getElementById("sidebar").classList.remove("open");
-  document.getElementById("sidebarOverlay").classList.remove("open");
-};
-</script>
 </body>
 </html>

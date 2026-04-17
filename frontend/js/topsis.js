@@ -1,5 +1,41 @@
 const rankClass = r => r === 1 ? "rank-1" : r === 2 ? "rank-2" : r === 3 ? "rank-3" : "rank-n";
 let polling = null;
+let barChart = null;
+
+function renderTopsisChart(data) {
+  const card = document.getElementById("chartCard");
+  if (!card) return;
+  if (!data || !data.length) {
+    card.style.display = "none";
+    if (barChart) { barChart.destroy(); barChart = null; }
+    return;
+  }
+  card.style.display = "";
+  const ctx = document.getElementById("chartBar").getContext("2d");
+  if (barChart) barChart.destroy();
+  const sorted = [...data].sort((a,b) => b.nilai_preferensi - a.nilai_preferensi);
+  barChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sorted.map(h => h.tenant.nama),
+      datasets: [{
+        label: "Nilai Preferensi",
+        data: sorted.map(h => h.nilai_preferensi),
+        backgroundColor: sorted.map(h => h.status === "LAYAK" ? "rgba(16,185,129,.8)" : "rgba(239,68,68,.75)"),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(4)}` } } },
+      scales: {
+        y: { beginAtZero: true, max: 1, grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 30 } }
+      },
+      animation: { duration: 700 }
+    }
+  });
+}
 
 const table = new TableManager({
   tbodyId:  "tbody",
@@ -32,16 +68,15 @@ async function loadHasil() {
   try {
     const data = await api.get("/topsis/hasil");
     if (data.length) {
-      const d = new Date(data[0].dihitung_at);
       const el = document.getElementById("lastCalc");
-      if (el) el.textContent = `Terakhir dihitung: ${d.toLocaleString("id-ID")}`;
+      if (el) el.textContent = `Terakhir dihitung: ${new Date(data[0].dihitung_at).toLocaleString("id-ID")}`;
     }
     table.setData(data);
-    if (typeof window._onTopsisData === "function") window._onTopsisData(data);
+    renderTopsisChart(data);
     return data.length > 0;
   } catch(_) {
     table.setData([]);
-    if (typeof window._onTopsisData === "function") window._onTopsisData([]);
+    renderTopsisChart([]);
     return false;
   }
 }
@@ -74,14 +109,15 @@ async function hitung() {
 
 async function downloadPDF() {
   try {
-    await api.get("/topsis/hasil");
+    const hasil = await api.get("/topsis/hasil");
+    if (!hasil.length) { toast("Belum ada hasil kalkulasi untuk dicetak", "error"); return; }
     window.open("/laporan/pdf", "_blank");
   } catch(_) {
     toast("Belum ada hasil kalkulasi untuk dicetak", "error");
   }
 }
 
-document.getElementById("btnHitung").onclick = hitung;
-document.getElementById("btnPDF").onclick     = downloadPDF;
+document.getElementById("btnHitung").addEventListener("click", hitung);
+document.getElementById("btnPDF").addEventListener("click", downloadPDF);
 
 loadHasil();

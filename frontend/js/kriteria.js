@@ -14,7 +14,7 @@ const table = new TableManager({
   emptyMsg: "Belum ada kriteria. Tambahkan kriteria pertama.",
   renderRow: k => `
     <tr>
-      <td style="color:#94a3b8">#${k.id}</td>
+      <td style="color:var(--text-3)">#${k.id}</td>
       <td><strong>${escHtml(k.nama)}</strong></td>
       <td>${k.bobot}</td>
       <td><span class="badge ${k.jenis === 'benefit' ? 'badge-green' : 'badge-orange'}">${k.jenis}</span></td>
@@ -89,5 +89,12 @@ async function submitForm(e) {
     btn.disabled = false; btn.textContent = "Simpan";
   }
 }
+
+// Bind buttons (replacing inline onclick)
+document.getElementById("btnTambahKriteria").addEventListener("click", () => {
+  openModal("modalKriteria");
+  resetForm();
+});
+document.getElementById("form").addEventListener("submit", submitForm);
 
 load();

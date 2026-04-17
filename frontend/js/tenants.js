@@ -154,4 +154,12 @@ async function submitTenant(e) {
   }
 }
 
+
+// Bind buttons (replacing inline onclick/onsubmit)
+document.getElementById("btnTambahTenant").addEventListener("click", () => {
+  openModal("modalTenant");
+  resetForm();
+});
+document.getElementById("formTenant").addEventListener("submit", submitTenant);
+
 load();
