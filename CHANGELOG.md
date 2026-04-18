@@ -6,6 +6,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0] — 2026-04-18
+
+### Added
+- **Plus Jakarta Sans font** — upgraded from Inter, recommended by UI/UX Pro Max skill for SaaS dashboards
+- **Bento-style stat cards** — persistent colored top-accent bar per card type (indigo/blue/green/red/orange)
+- **Gradient brand title** — sidebar brand text uses indigo-to-white gradient for premium look
+
+### Changed
+- Card header, modal title, topbar title font-weight raised to 800 with tighter letter-spacing
+- Stat values use tabular-nums for aligned number rendering
+
+---
+
+## [1.4.0] — 2026-04-17
+
+### Added
+- **Modern UI redesign** — complete CSS rewrite with design system (CSS custom properties, glassmorphism topbar, dark sidebar with gradient active state)
+- **Split-panel login page** — dark left panel with feature highlights, white right panel with form
+- **Chart.js integration** — doughnut chart on dashboard (distribusi status), bar chart on TOPSIS ranking page
+- **Kontrak table sort** — sortable columns (#, Nama Tenant, Status) on Nilai Kontrak page
+- **Rank badges** — gold/silver/bronze/normal rank styling on TOPSIS results table
+- **Progress bar** — nilai preferensi visualized as inline progress bar in TOPSIS table
+- **Mobile responsive** — hamburger menu, sidebar overlay, responsive grid breakpoints
+
+### Fixed
+- **CSP violations** — all inline script tags and onclick/onsubmit handlers extracted to external JS files (login.js, dashboard.js, topsis.js)
+- **Login form GET submit** — login script moved to /js/login.js to comply with Content-Security-Policy
+- **Logout button disappearing** — JWT decoded locally via atob() to avoid nginx auth rate-limit (429); /auth/me only runs as background validity check
+- **v1.0.0 — SPK System text showing** — fixed auth.js display race condition caused by rate-limited /auth/me calls
+- **PDF Not authenticated error** — replaced window.open() with fetch() + Blob URL download to send JWT Authorization header
+
+---
+
 ## [1.3.0] — 2026-04-16
 
 ### Added
